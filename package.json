@@ -1,0 +1,21 @@
+{
+  "name": "capstone-back-end",
+  "version": "1.0.0",
+  "description": "This repository contains the backend API for **Wistaway Mini**, a discovery-first travel application focused on curated lodging properties and intent-based playlists.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LilyWistaway/Capstone-Back-End.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/LilyWistaway/Capstone-Back-End/issues"
+  },
+  "homepage": "https://github.com/LilyWistaway/Capstone-Back-End#readme"
+}
