@@ -6,10 +6,16 @@ const app = express();
 // Middleware
 app.use(express.json());
 
-// CORS: allow frontend to call backend (configured later via env)
+// CORS configuration
+if (!process.env.CORS_ORIGIN) {
+  throw new Error("CORS_ORIGIN is not set. Check your .env file.");
+}
+
 app.use(
   cors({
     origin: process.env.CORS_ORIGIN,
+    methods: ["GET", "POST", "PATCH", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
