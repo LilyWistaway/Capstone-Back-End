@@ -14,8 +14,16 @@ app.use(
 );
 
 // Health check route
-app.get("/health", (req, res) => {
-  res.status(200).json({ status: "ok" });
+const { query } = require("./db/query");
+
+// Health check route (includes DB connectivity check)
+app.get("/health", async (req, res, next) => {
+  try {
+    await query("SELECT 1 AS ok;");
+    res.status(200).json({ status: "ok", db: "ok" });
+  } catch (err) {
+    next(err);
+  }
 });
 
 // Basic 404 handler
