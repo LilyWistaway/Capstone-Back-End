@@ -1,5 +1,7 @@
 const express = require("express");
 const cors = require("cors");
+const authRoutes = require("./routes/auth");
+const playlistsRoutes = require("./routes/playlists");
 
 const app = express();
 
@@ -18,6 +20,9 @@ app.use(
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
+
+app.use("/auth", authRoutes);
+app.use("/playlists", playlistsRoutes);
 
 // Health check route
 const { query } = require("./db/query");

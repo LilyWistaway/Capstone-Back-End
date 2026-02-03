@@ -54,7 +54,7 @@ CREATE TABLE playlist_links (
   id SERIAL PRIMARY KEY,
   playlist_id INTEGER NOT NULL REFERENCES playlists(id) ON DELETE CASCADE,
   url TEXT NOT NULL,
-  link_type TEXT NOT NULL CHECK (link_type IN ('article', 'tiktok', 'youtube', 'other')),
+  link_type TEXT NOT NULL CHECK (link_type IN ('tiktok','instagram','webpage','youtube')),
   title TEXT,
   note TEXT,
   created_at TIMESTAMP DEFAULT NOW()
