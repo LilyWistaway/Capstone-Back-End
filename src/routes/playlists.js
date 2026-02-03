@@ -10,6 +10,30 @@ const router = express.Router();
  */
 router.use(requireAuth);
 
+const ALLOWED_LINK_TYPES = new Set([
+  "tiktok",
+  "instagram",
+  "webpage",
+  "youtube",
+]);
+
+function isValidHttpUrl(value) {
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+async function assertPlaylistOwnedByUser(playlistId, userId) {
+  const result = await query(
+    `SELECT id FROM playlists WHERE id = $1 AND user_id = $2;`,
+    [playlistId, userId]
+  );
+  return result.rows.length > 0;
+}
+
 /**
  * GET /playlists
  * Returns all playlists for the current user.
@@ -173,6 +197,99 @@ router.delete("/:id", async (req, res, next) => {
 
     if (result.rows.length === 0) {
       return res.status(404).json({ error: "Playlist not found" });
+    }
+
+    return res.status(204).send();
+  } catch (err) {
+    return next(err);
+  }
+});
+
+/**
+ * POST /playlists/:id/links
+ * Body: { url, linkType, title?, note? }
+ * Adds an external link to a playlist if owned by the current user.
+ */
+router.post("/:id/links", async (req, res, next) => {
+  try {
+    const userId = req.user.userId;
+    const playlistId = Number(req.params.id);
+
+    if (!Number.isInteger(playlistId)) {
+      return res.status(400).json({ error: "Invalid playlist id" });
+    }
+
+    const owned = await assertPlaylistOwnedByUser(playlistId, userId);
+    if (!owned) {
+      return res.status(404).json({ error: "Playlist not found" });
+    }
+
+    const { url, linkType, title, note } = req.body;
+
+    if (!url || !isValidHttpUrl(String(url).trim())) {
+      return res
+        .status(400)
+        .json({ error: "A valid http/https url is required" });
+    }
+
+    if (!linkType || !ALLOWED_LINK_TYPES.has(String(linkType).trim())) {
+      return res.status(400).json({
+        error: "Invalid linkType",
+        allowed: Array.from(ALLOWED_LINK_TYPES),
+      });
+    }
+
+    const result = await query(
+      `
+      INSERT INTO playlist_links (playlist_id, url, link_type, title, note)
+      VALUES ($1, $2, $3, $4, $5)
+      RETURNING id, playlist_id, url, link_type, title, note, created_at;
+      `,
+      [
+        playlistId,
+        String(url).trim(),
+        String(linkType).trim(),
+        title ? String(title).trim() : null,
+        note ? String(note).trim() : null,
+      ]
+    );
+
+    return res.status(201).json({ link: result.rows[0] });
+  } catch (err) {
+    return next(err);
+  }
+});
+
+/**
+ * DELETE /playlists/:id/links/:linkId
+ * Deletes a link from a playlist if owned by the current user.
+ */
+router.delete("/:id/links/:linkId", async (req, res, next) => {
+  try {
+    const userId = req.user.userId;
+    const playlistId = Number(req.params.id);
+    const linkId = Number(req.params.linkId);
+
+    if (!Number.isInteger(playlistId) || !Number.isInteger(linkId)) {
+      return res.status(400).json({ error: "Invalid id" });
+    }
+
+    const owned = await assertPlaylistOwnedByUser(playlistId, userId);
+    if (!owned) {
+      return res.status(404).json({ error: "Playlist not found" });
+    }
+
+    const result = await query(
+      `
+      DELETE FROM playlist_links
+      WHERE id = $1 AND playlist_id = $2
+      RETURNING id;
+      `,
+      [linkId, playlistId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Link not found" });
     }
 
     return res.status(204).send();
