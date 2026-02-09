@@ -91,3 +91,47 @@ DATABASE_URL=
 JWT_SECRET=
 NODE_ENV=development
 ```
+
+---
+
+## File & Component Overview
+
+### `src/app.js`
+
+Configures the Express application, including middleware, routes, error handling, and the health check endpoint.
+
+### `src/server.js`
+
+Starts the Express server and binds it to the configured port.
+
+### `src/routes/auth.js`
+
+Implements user registration, login, and a protected endpoint for retrieving the currently authenticated user using JWTs.
+
+### `src/routes/playlists.js`
+
+Implements all playlist-related endpoints, including user-owned playlist CRUD and adding/removing external inspiration links.
+
+### `src/middleware/requireAuth.js`
+
+Protects routes by verifying a JWT from the Authorization header and attaching the authenticated user to the request.
+
+### `src/utils/auth.js`
+
+Handles JWT creation and verification logic used by authentication routes and middleware.
+
+### `src/db/pool.js`
+
+Initializes the PostgreSQL connection pool using the DATABASE_URL environment variable.
+
+### `src/db/query.js`
+
+Provides a reusable helper for executing parameterized SQL queries against the database.
+
+### `db/schema.sql`
+
+Defines all database tables, relationships, and constraints used by the application.
+
+### `db/seed.sql`
+
+Populates the database with initial sample data for development and testing.
