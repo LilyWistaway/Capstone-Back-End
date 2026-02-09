@@ -29,7 +29,7 @@ function isValidHttpUrl(value) {
 async function assertPlaylistOwnedByUser(playlistId, userId) {
   const result = await query(
     `SELECT id FROM playlists WHERE id = $1 AND user_id = $2;`,
-    [playlistId, userId]
+    [playlistId, userId],
   );
   return result.rows.length > 0;
 }
@@ -49,7 +49,7 @@ router.get("/", async (req, res, next) => {
       WHERE user_id = $1
       ORDER BY created_at DESC;
       `,
-      [userId]
+      [userId],
     );
 
     return res.status(200).json({ playlists: result.rows });
@@ -78,7 +78,7 @@ router.post("/", async (req, res, next) => {
       VALUES ($1, $2, $3)
       RETURNING id, user_id, title, description, created_at;
       `,
-      [userId, String(title).trim(), description || null]
+      [userId, String(title).trim(), description || null],
     );
 
     return res.status(201).json({ playlist: result.rows[0] });
@@ -89,7 +89,7 @@ router.post("/", async (req, res, next) => {
 
 /**
  * GET /playlists/:id
- * Returns a single playlist if owned by the current user.
+ * Returns a single playlist + its links if owned by the current user.
  */
 router.get("/:id", async (req, res, next) => {
   try {
@@ -100,20 +100,33 @@ router.get("/:id", async (req, res, next) => {
       return res.status(400).json({ error: "Invalid playlist id" });
     }
 
-    const result = await query(
+    const playlistResult = await query(
       `
       SELECT id, user_id, title, description, created_at
       FROM playlists
       WHERE id = $1 AND user_id = $2;
       `,
-      [playlistId, userId]
+      [playlistId, userId],
     );
 
-    if (result.rows.length === 0) {
+    if (playlistResult.rows.length === 0) {
       return res.status(404).json({ error: "Playlist not found" });
     }
 
-    return res.status(200).json({ playlist: result.rows[0] });
+    const linksResult = await query(
+      `
+      SELECT id, playlist_id, url, link_type, title, note, created_at
+      FROM playlist_links
+      WHERE playlist_id = $1
+      ORDER BY created_at DESC;
+      `,
+      [playlistId],
+    );
+
+    return res.status(200).json({
+      playlist: playlistResult.rows[0],
+      links: linksResult.rows,
+    });
   } catch (err) {
     return next(err);
   }
@@ -160,7 +173,7 @@ router.patch("/:id", async (req, res, next) => {
         hasDescription ? (description === null ? null : description) : null,
         playlistId,
         userId,
-      ]
+      ],
     );
 
     if (result.rows.length === 0) {
@@ -192,7 +205,7 @@ router.delete("/:id", async (req, res, next) => {
       WHERE id = $1 AND user_id = $2
       RETURNING id;
       `,
-      [playlistId, userId]
+      [playlistId, userId],
     );
 
     if (result.rows.length === 0) {
@@ -251,7 +264,7 @@ router.post("/:id/links", async (req, res, next) => {
         String(linkType).trim(),
         title ? String(title).trim() : null,
         note ? String(note).trim() : null,
-      ]
+      ],
     );
 
     return res.status(201).json({ link: result.rows[0] });
@@ -285,7 +298,7 @@ router.delete("/:id/links/:linkId", async (req, res, next) => {
       WHERE id = $1 AND playlist_id = $2
       RETURNING id;
       `,
-      [linkId, playlistId]
+      [linkId, playlistId],
     );
 
     if (result.rows.length === 0) {
